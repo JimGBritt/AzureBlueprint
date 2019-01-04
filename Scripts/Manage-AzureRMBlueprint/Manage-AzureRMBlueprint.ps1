@@ -1,6 +1,6 @@
-﻿<#PSScriptInfo
+<#PSScriptInfo
 
-.VERSION 2.1
+.VERSION 2.2
 
 .GUID 0fc48522-2362-4cc0-b46d-e1d88d87b4e2
 
@@ -26,11 +26,12 @@
 .EXTERNALSCRIPTDEPENDENCIES 
 
 .RELEASENOTES
-   November 30, 2018 - version 2.1
-   * Updated REST Token code
-   * Added exit 1 to terminating errors
-   * Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
-        
+   January 04, 2019 - version 2.2
+   * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
+     Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
+   * Added validation that all blueprint and artifact names are less than or equal to the maximim of 48 characters
+     Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
+     https://github.com/JimGBritt/AzureBlueprint/issues/1             
 #>
 
 
@@ -52,6 +53,9 @@
   related artifacts.
 
   ADDITIONAL NOTE: This script currently also does not export custom policies.
+
+.PARAMETER ModuleMode
+    The module (AzureRM or Az) used to authenticate to Azure to be leveraged with the script execution
 
 .PARAMETER SubscriptionId
     The subscriptionID of the Azure Subscription that is within the Azure AD tenant with your Blueprint or where
@@ -84,8 +88,21 @@
     Use ReportDir in conjunction with report to export report results to a report directory
 
  .EXAMPLE
+  .\Manage-AzureRMBlueprint.ps1 -ModuleMode Az -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
+  Uses Az Module to authenticate to Azure and Imports a blueprint from the relative path.  
+  Will prompt for Azure Subscription to set context on AD Tenant.
+  See: https://docs.microsoft.com/en-us/powershell/azure/new-azureps-module-az?view=azps-1.0.0 to migrate to Az Module
+
+ .EXAMPLE
+  .\Manage-AzureRMBlueprint.ps1 -ModuleMode AzureRM -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
+  Uses AzureRM Module to authenticate to Azure and Imports a blueprint from the relative path.
+  Will prompt for Azure Subscription to set context on AD Tenant.
+  Note: AzureRM is currently the default
+
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
   Imports a blueprint from the relative path.  Will prompt for Azure Subscription to set context on AD Tenant
+
 
 .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -mode export -ManagementGroupID "<ManagementGroup where Blueprint is located>" -BlueprintName "<MyBlueprint>" -ExportDir "<Target Folder Name>"
@@ -109,10 +126,16 @@
   .\Manage-AzureRMBlueprint.ps1 -mode report -ManagementGroupID "<ManagementGroup where Blueprint is located>" -BlueprintName "<MyBlueprint>" -ReportDir "<Target Folder Name>" -SubscriptionID "<a SubscriptionID within the tenant you want to report from>"
   Take in parameters and exports a named blueprint and related artifacts to a sub directory named after the MG
 
-
 .NOTES
    AUTHOR: Jim Britt Senior Program Manager - Azure CAT 
-   LAST EDIT: November 30, 2018 - version 2.1
+   LAST EDIT: January 04, 2019 - version 2.2
+   * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
+     Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
+   * Added validation that all blueprint and artifact names are less than or equal to the maximim of 48 characters
+     Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
+     https://github.com/JimGBritt/AzureBlueprint/issues/1   
+   
+   November 30, 2018 - version 2.1
    * Updated REST Token code
    * Added exit 1 to terminating errors
    * Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
@@ -134,7 +157,6 @@
    * Fixed an example in my get-help output
    * Thank you Jorge Cotillo (MSFT) AzureCAT for your inputs on improved logic for json validation!
    
-   
    October 31, 2018 ver 1.41
    * Added more debug information to help in troubleshooting issues
    * Removed NewManagementGroupID and required ManagementGroupID as a parameter for import/report/export
@@ -148,11 +170,11 @@
    * No longer navigating to script directory during execution
    * Updated Parameters / Sets in general - clean up
 
-
 .LINK
     This script posted to and discussed at the following locations:
     https://aka.ms/ManageARMBlueprints/
     https://aka.ms/ManageARMBlueprints/Video
+    https://github.com/JimGBritt/AzureBlueprint/
 #>
 
 <# 
@@ -177,6 +199,11 @@ param
     [Parameter(ParameterSetName='Report')]
     [ValidateSet("Export","Import","Report")]
     [String]$Mode,
+    
+    # Module Mode (Az or AzureRM)
+    [Parameter(Mandatory = $False)]
+    [ValidateSet("Az","AzureRM")]
+    [String]$ModuleMode="AzureRM",
 
     # The Management Group ID (***not the friendly name***)
     [Parameter(ParameterSetName='Import')]
@@ -286,9 +313,16 @@ function build-PutContent
 }
 
 # MAIN SCRIPT
-# Determine where the script is running - build export dir
+Write-Host "Using " -NoNewline 
+write-host "$ModuleMode " -NoNewline -ForegroundColor Yellow
+write-host "module mode"
+
+# Limitations to the script
 write-host "Please note this script is using a preview API for Azure Blueprint and is subject to change." -ForegroundColor Green
 write-host "This script currently only supports Draft Blueprints or most recently published and related artifacts." -ForegroundColor DarkYellow
+write-host "This script currently does not support custom policies - only built-ins are supported." -ForegroundColor DarkYellow
+
+# Determine where the script is running - build export dir
 if ($MyInvocation.MyCommand.Path -ne $null)
 {
     $CurrentDir = Split-Path $MyInvocation.MyCommand.Path
@@ -332,19 +366,29 @@ If($Mode -eq "Report" -AND $ReportDir)
 Write-Host "Authenticating to Azure..." -ForegroundColor Cyan
 try
 {
-    $AzureLogin = Get-AzureRmSubscription
+    If($ModuleMode -eq "AzureRM"){$AzureLogin = Get-AzureRMSubscription}
+    If($ModuleMode -eq "Az"){$AzureLogin = Get-AzSubscription}
 }
 catch
 {
-    $null = Login-AzureRmAccount
-    $AzureLogin = Get-AzureRmSubscription
+    If($ModuleMode -eq "AzureRM")
+    {
+        $null = Login-AzureRmAccount
+        $AzureLogin = Get-AzureRmSubscription
+    }
+    If($ModuleMode -eq "Az")
+    {
+        $null = Login-AzAccount
+        $AzureLogin = Get-AzSubscription
+    }
 }
 
 # Authenticate to Azure if not already authenticated 
 # Ensure this is the subscription where your Management Groups are that house Blueprints for import/export operations
 If($AzureLogin -and !($SubscriptionID))
 {
-    [array]$SubscriptionArray = Add-IndexNumberToArray (Get-AzureRmSubscription) 
+    If($ModuleMode -eq "AzureRM"){[array]$SubscriptionArray = Add-IndexNumberToArray (Get-AzureRmSubscription)}
+    If($ModuleMode -eq "Az"){[array]$SubscriptionArray = Add-IndexNumberToArray (Get-AzSubscription)}
     [int]$SelectedSub = 0
 
     # use the current subscription if there is only one subscription available
@@ -388,11 +432,13 @@ If($AzureLogin -and !($SubscriptionID))
     }
 }
 Write-Host "Selecting Azure Subscription: $($SubscriptionID.Guid) ..." -ForegroundColor Cyan
-$Null = Select-AzureRmSubscription -SubscriptionId $SubscriptionID.Guid
+If($ModuleMode -eq "AzureRM"){$Null = Select-AzureRmSubscription -SubscriptionId $SubscriptionID.Guid}
+If($ModuleMode -eq "Az"){$Null = Select-AzSubscription -SubscriptionId $SubscriptionID.Guid}
 
 If(!($ManagementGroupID))
 {
-    [array]$MgtGroupArray = Add-IndexNumberToArray (Get-AzureRmManagementGroup) 
+    If($ModuleMode -eq "AzureRM"){[array]$MgtGroupArray = Add-IndexNumberToArray (Get-AzureRmManagementGroup)}
+    If($ModuleMode -eq "Az"){[array]$MgtGroupArray = Add-IndexNumberToArray (Get-AzManagementGroup)}
     if(!$MgtGroupArray)
     {
         Write-host "Please make sure you have Management Groups that are accessible"
@@ -430,7 +476,8 @@ If(!($ManagementGroupID))
 }
 
 # Set context for REST Auth Token
-$currentContext = Get-AzureRmContext
+If($ModuleMode -eq "AzureRM"){$currentContext = Get-AzureRmContext}
+If($ModuleMode -eq "Az"){$currentContext = Get-AzContext}
 
 # Get token from current context to auth
 $azureRmProfile = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile
@@ -741,9 +788,19 @@ If($Mode -eq "Import")
             }
             $JSONArray = $JSONArray + $FileContent
         }
+
         # Let's publish the Blueprint First
         foreach($JSON in $JSONArray)
         {
+            # Ensuring we are 48 or less chars - limit imposed for maximum naming for a blueprint or artifact
+            If($JSON.Name.Length -gt 48)
+            {
+                Write-Host "Blueprint and artifact names must be 48 characters or less" -ForegroundColor Green
+                Write-Host "Blueprint or artifact named $($JSON.Name) is " -ForegroundColor red -NoNewline
+                write-host "$($JSON.Name.Length) " -ForegroundColor Yellow -NoNewline
+                Write-host "chars long - please fix before import" -ForegroundColor Red
+                exit 1
+            }
             if($JSON.type -EQ "Microsoft.Blueprint/blueprints")
             {
                 Write-Host "Importing main Blueprint first " -ForegroundColor White -NoNewline
