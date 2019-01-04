@@ -29,7 +29,7 @@
    January 04, 2019 - version 2.2
    * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
      Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
-   * Added validation that all blueprint and artifact names are less than or equal to the maximim of 48 characters
+   * Added validation that all blueprint and artifact names are less than or equal to the maximum of 48 characters
      Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
      https://github.com/JimGBritt/AzureBlueprint/issues/1             
 #>
@@ -131,7 +131,7 @@
    LAST EDIT: January 04, 2019 - version 2.2
    * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
      Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
-   * Added validation that all blueprint and artifact names are less than or equal to the maximim of 48 characters
+   * Added validation that all blueprint and artifact names are less than or equal to the maximum of 48 characters
      Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
      https://github.com/JimGBritt/AzureBlueprint/issues/1   
    
