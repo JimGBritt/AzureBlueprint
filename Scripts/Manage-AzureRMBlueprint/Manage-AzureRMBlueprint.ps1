@@ -1,4 +1,4 @@
-﻿<#PSScriptInfo
+<#PSScriptInfo
 
 .VERSION 2.2
 
@@ -817,7 +817,7 @@ If($Mode -eq "Import")
                 }
                 catch
                 {
-                    StandardError -Exception $($_.Exception.Message)
+                    StandardError -Exception $($_.ErrorDetails.Message)
                     exit 1
                 }
             }
@@ -840,7 +840,7 @@ If($Mode -eq "Import")
                 }
                 catch
                 {
-                    StandardError -Exception $($_.Exception.Message)
+                    StandardError -Exception $($_.ErrorDetails.Message)
                     exit 1
                 }
             }
