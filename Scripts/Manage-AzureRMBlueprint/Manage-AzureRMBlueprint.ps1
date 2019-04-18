@@ -332,7 +332,7 @@ else
     # Sometimes $myinvocation is null, it depends on the PS console host
     $CurrentDir = "."
 }
-$APIVersion = "?api-version=2017-11-11-preview"
+$APIVersion = "?api-version=2018-11-01-preview"
 #cd $CurrentDir
 
 # Determine what we are doing - export/import/report
