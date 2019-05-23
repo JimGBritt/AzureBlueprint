@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 2.2
+.VERSION 2.3
 
 .GUID 0fc48522-2362-4cc0-b46d-e1d88d87b4e2
 
@@ -26,12 +26,14 @@
 .EXTERNALSCRIPTDEPENDENCIES 
 
 .RELEASENOTES
-   January 04, 2019 - version 2.2
-   * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
-     Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
-   * Added validation that all blueprint and artifact names are less than or equal to the maximum of 48 characters
-     Thank you for your great inputs on these updates Guillaume Pugnet (@PugnetGuillaume)!
-     https://github.com/JimGBritt/AzureBlueprint/issues/1             
+   May 23, 2019 - version 2.3
+   * Added BlueprintTarget to the parameters to allow for supporting subscription for Blueprint Location on
+     import and export. Thank you https://github.com/mrptsai (Paul Towler) for your inputs to add this option! 
+   * Added new API version https://github.com/JimGBritt/AzureBlueprint/commit/c3304315745676912e7a958e40fa91b5da0d005e (thank you https://github.com/drmiru Michael Rueefli!)
+   * Added enhanced error output https://github.com/JimGBritt/AzureBlueprint/commit/94658c99a7b8207937492bb5a71285a094b6c11e#diff-e7e495ba10b61589a1c555132692367f (thank you https://github.com/Oechiih Jan Oehen!)
+   * Updated -ModuleMode to be Az by default (time to move on :)).
+   * Added option to bypass subscription requirement and provide TenantID (https://github.com/JimGBritt/AzureBlueprint/issues/2)
+     Thank you https://github.com/GPugnet (Guillaume Pugnet) your your feedback on bypassing the SubId requirement
 #>
 
 
@@ -87,6 +89,14 @@
  .PARAMETER ReportDir
     Use ReportDir in conjunction with report to export report results to a report directory
 
+ .PARAMETER TenantId
+    Use the -TenantId parameter with a proper guid formatted ID to bypass the subscriptionID requirement
+    Note: Cannot use in conjunction with -SubscriptionID
+
+ .PARAMETER BlueprintMode
+    Use the -BlueprintMode parameter to specify you want to import/export/report from either a subscriptionID or ManagementGroupID
+    Note: ManagementGroup is the default mode
+
  .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -ModuleMode Az -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
   Uses Az Module to authenticate to Azure and Imports a blueprint from the relative path.  
@@ -97,38 +107,58 @@
   .\Manage-AzureRMBlueprint.ps1 -ModuleMode AzureRM -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
   Uses AzureRM Module to authenticate to Azure and Imports a blueprint from the relative path.
   Will prompt for Azure Subscription to set context on AD Tenant.
-  Note: AzureRM is currently the default
+  Note: Az is currently the default
+
+ .EXAMPLE
+  .\Manage-AzureRMBlueprint.ps1 -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint -TenantId "<guid>"
+  Imports a blueprint from the relative path.  Will prompt for Management Group to import into
+
+ .EXAMPLE
+  .\Manage-AzureRMBlueprint.ps1 -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint -BlueprintMode Subscription
+  Imports a blueprint from the relative path.  Will prompt for Azure Subscription to import blueprint into
+
+ .EXAMPLE
+  .\Manage-AzureRMBlueprint.ps1 -Mode export -exportDir .\BPExports\ -BlueprintMode Subscription
+  Exports a blueprint to the relative path.  Will prompt for Azure Subscription to export blueprint from
 
  .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -Mode import -ImportDir .\BPExports\MG-root\MyBlueprint 
   Imports a blueprint from the relative path.  Will prompt for Azure Subscription to set context on AD Tenant
 
-
-.EXAMPLE
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -mode export -ManagementGroupID "<ManagementGroup where Blueprint is located>" -BlueprintName "<MyBlueprint>" -ExportDir "<Target Folder Name>"
   Take in parameters and exports a named blueprint and related artifacts to a sub directory named after the MG
 
-.EXAMPLE
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -mode export -ManagementGroupID "<ManagementGroup where Blueprint is located>" -BlueprintName "<MyBlueprint>" -ExportDir "Blueprints"
   Take in parameters and exports a named blueprint and related artifacts to a sub directory named after the new MG name
   This example allows you to export the named Managment Group in the blueprint and artifacts to a new one allowing you
   to import into another Azure AD tenant with a different naming / management group structure.
 
-.EXAMPLE
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -mode import -ImportDir ".\exports\MG-Root\MyBlueprint" -ManagementGroupID "<Target ManagementGroup for Blueprint>" -NewBlueprintName "<New Blueprint Name>"
   This will import a blueprint and artifacts from a source directory and targets a management group and new blueprint name on import
 
-.EXAMPLE
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -Mode Import -ImportDir ".\exports\MG-Root\MyBlueprint" -SubscriptionId "e69041bc-8e27-4272-9089-60ac8f508937" -force
   This will import a blueprint and artifacts from a source directory without prompting.
 
-.EXAMPLE
+ .EXAMPLE
   .\Manage-AzureRMBlueprint.ps1 -mode report -ManagementGroupID "<ManagementGroup where Blueprint is located>" -BlueprintName "<MyBlueprint>" -ReportDir "<Target Folder Name>" -SubscriptionID "<a SubscriptionID within the tenant you want to report from>"
   Take in parameters and exports a named blueprint and related artifacts to a sub directory named after the MG
 
 .NOTES
    AUTHOR: Jim Britt Senior Program Manager - Azure CAT 
-   LAST EDIT: January 04, 2019 - version 2.2
+   LAST EDIT: May 23, 2019 - version 2.3
+   * Added BlueprintTarget to the parameters to allow for supporting subscription for Blueprint Location on
+     import and export. Thank you https://github.com/mrptsai (Paul Towler) for your inputs to add this option! 
+   * Added new API version https://github.com/JimGBritt/AzureBlueprint/commit/c3304315745676912e7a958e40fa91b5da0d005e (thank you https://github.com/drmiru Michael Rueefli!)
+   * Added enhanced error output https://github.com/JimGBritt/AzureBlueprint/commit/94658c99a7b8207937492bb5a71285a094b6c11e#diff-e7e495ba10b61589a1c555132692367f (thank you https://github.com/Oechiih Jan Oehen!)
+   * Updated -ModuleMode to be Az by default (time to move on :)).
+   * Added option to bypass subscription requirement and provide TenantID (https://github.com/JimGBritt/AzureBlueprint/issues/2)
+     Thank you https://github.com/GPugnet (Guillaume Pugnet) your your feedback on bypassing the SubId requirement
+   
+   January 04, 2019 - version 2.2
    * Added ModuleMode to the parameters to allow for supporting AzureRM and Az module sets
      Thank you Florent APPOINTAIRE (@florent_app) for the feedback and additional inputs for supporting Az modules  
    * Added validation that all blueprint and artifact names are less than or equal to the maximum of 48 characters
@@ -203,7 +233,7 @@ param
     # Module Mode (Az or AzureRM)
     [Parameter(Mandatory = $False)]
     [ValidateSet("Az","AzureRM")]
-    [String]$ModuleMode="AzureRM",
+    [String]$ModuleMode="Az",
 
     # The Management Group ID (***not the friendly name***)
     [Parameter(ParameterSetName='Import')]
@@ -253,10 +283,20 @@ param
     [Parameter(ParameterSetName='force')]
     [string]$ImportDir,
 
+    # Blueprint Mode (Subscription or ManagementGroup)
+    [Parameter(ParameterSetName='Export')]
+    [Parameter(ParameterSetName='Import')]
+    [Parameter(ParameterSetName='Report')]
+    [ValidateSet("ManagementGroup","Subscription")]
+    [string]$BlueprintMode="ManagementGroup",
+
     # Use Force to run in silent mode (requires certain parameters to be provided)
     [Parameter(ParameterSetName='Import')]
     [Parameter(ParameterSetName='force')]
-    [switch]$Force
+    [switch]$Force,
+
+    # TenantId to bypass subscription requirement
+    [guid]$TenantId
 
 )
 
@@ -385,7 +425,7 @@ catch
 
 # Authenticate to Azure if not already authenticated 
 # Ensure this is the subscription where your Management Groups are that house Blueprints for import/export operations
-If($AzureLogin -and !($SubscriptionID))
+If($AzureLogin -and !($SubscriptionID) -and !($TenantId))
 {
     If($ModuleMode -eq "AzureRM"){[array]$SubscriptionArray = Add-IndexNumberToArray (Get-AzureRmSubscription)}
     If($ModuleMode -eq "Az"){[array]$SubscriptionArray = Add-IndexNumberToArray (Get-AzSubscription)}
@@ -431,11 +471,13 @@ If($AzureLogin -and !($SubscriptionID))
         [guid]$SubscriptionID = $($SubscriptionArray[$SelectedSub - 1].ID)
     }
 }
-Write-Host "Selecting Azure Subscription: $($SubscriptionID.Guid) ..." -ForegroundColor Cyan
-If($ModuleMode -eq "AzureRM"){$Null = Select-AzureRmSubscription -SubscriptionId $SubscriptionID.Guid}
-If($ModuleMode -eq "Az"){$Null = Select-AzSubscription -SubscriptionId $SubscriptionID.Guid}
-
-If(!($ManagementGroupID))
+if($SubscriptionId -and !($TenantId))
+{
+    Write-Host "Selecting Azure Subscription: $($SubscriptionID.Guid) ..." -ForegroundColor Cyan
+    If($ModuleMode -eq "AzureRM"){$Null = Select-AzureRmSubscription -SubscriptionId $SubscriptionID.Guid}
+    If($ModuleMode -eq "Az"){$Null = Select-AzSubscription -SubscriptionId $SubscriptionID.Guid}
+}
+If(!($ManagementGroupID) -and $BlueprintMode -eq "ManagementGroup")
 {
     If($ModuleMode -eq "AzureRM"){[array]$MgtGroupArray = Add-IndexNumberToArray (Get-AzureRmManagementGroup)}
     If($ModuleMode -eq "Az"){[array]$MgtGroupArray = Add-IndexNumberToArray (Get-AzManagementGroup)}
@@ -482,7 +524,14 @@ If($ModuleMode -eq "Az"){$currentContext = Get-AzContext}
 # Get token from current context to auth
 $azureRmProfile = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile
 $profileClient = New-Object Microsoft.Azure.Commands.ResourceManager.Common.RMProfileClient($azureRmProfile)
-$token = $profileClient.AcquireAccessToken($currentContext.Subscription.TenantId)
+if($TenantId)
+{
+    $token = $profileClient.AcquireAccessToken($currentContext.Tenant.TenantId)
+}
+else 
+{
+    $token = $profileClient.AcquireAccessToken($currentContext.Subscription.TenantId)
+}
 
 # If export or report mode is used 
 If($Mode -eq "Export" -or $Mode -eq "Report")
@@ -500,7 +549,15 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
     If(!$BlueprintName)
     {
         # Get all Blueprints
-        $BlueprintsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$APIVersion"
+        if ($BlueprintMode -eq "Subscription" -and !($TenantId))
+        {
+            $BlueprintsURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
+        }
+        else 
+        {
+            $BlueprintsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
+        }
+        
         Try
         {
             $BPs = Invoke-WebRequest -uri $BlueprintsURI @GetBlueprint
@@ -528,7 +585,14 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
         while($SelectedBP -gt $BPsArray.Count -or $SelectedBP -lt 1)
         {
             Write-host "Please select a Blueprint from the list below to export"
-            $BPsArray | select "#", @{Label = "Blueprint Name";Expression={$_.name}}, @{Label = "ManagementGroup"; Expression = {$($BPsArray.ID).split("/")[4]}}, @{Label = "Blueprint Description";Expression={$_.properties.description}} | ft
+            if ($BlueprintMode -eq "Subscription" -and !($TenantId))
+            {
+                $BPsArray | Select-Object "#", @{Label = "Blueprint Name";Expression={$_.name}}, @{Label = "Subscription"; Expression = {$($BPsArray.ID).split("/")[2]}}, @{Label = "Blueprint Description";Expression={$_.properties.description}} | Format-Table
+            }
+            else
+            {
+                $BPsArray | Select-Object "#", @{Label = "Blueprint Name";Expression={$_.name}}, @{Label = "ManagementGroup"; Expression = {$($BPsArray.ID).split("/")[4]}}, @{Label = "Blueprint Description";Expression={$_.properties.description}} | Format-Table
+            }
             try
             {
                 $SelectedBP = Read-Host "Please enter a selection from 1 to $($BPsArray.count)"
@@ -590,8 +654,16 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
     Else
     {
         Write-host "No published versions present to export - defaulting to draft"#>
-        $BluePrintURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints/$BluePrintName$APIVersion"
-        $ArtifactsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints/$BluePrintName/artifacts$APIVersion"
+    #Blueprints and Artifacts URIs
+    if ($BlueprintMode -eq "Subscription" -and !($TenantId))
+    {
+        $BluePrintURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+    } else
+    {
+        $BluePrintURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+    }
     #}
     try
     {
@@ -715,10 +787,18 @@ If($Mode -eq "Import")
 {
     # Array for JSONs processing
     $JSONArray =@()
+    if($BlueprintMode -eq "Subscription" -and !($TenantId))
+    {
+        $TargetStr = "$SubscriptionId subscription"
+    }
+    else
+    {
+        $TargetStr = "$ManagementGroupID Management Group"        
+    }
     
     # Validate customer wants to continue to import Blueprint and artifacts
     # If Force used, will update without prompting
-    if ($Force -OR $PSCmdlet.ShouldContinue("This operation will attempt to import the Blueprint from $ImportDir into your $ManagementGroupID Management Group. Continue?",$ImportDir) )
+    if ($Force -OR $PSCmdlet.ShouldContinue("This operation will attempt to import the Blueprint from $ImportDir into your $TargetStr. Continue?",$ImportDir) )
     {
         $filesToImport = Get-ChildItem $ImportDir\*.json -rec
         Write-Host "Starting the import of a Blueprint and Artifacts" -ForegroundColor Cyan
@@ -768,8 +848,16 @@ If($Mode -eq "Import")
                     $FileContent.Name = $NewBluePrintName
                     $BlueprintName = $NewBluePrintName
                 }
-                #Ensure we update the Management Group and BlueprintName for the target ID
-                $FileContent.ID = "/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)"
+                #Ensure we update the Management Group / subscriptionId and BlueprintName for the target ID
+                if ($BlueprintMode -eq "Subscription" -and !($TenantId))
+                {
+                    $FileContent.ID = "/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)"
+                }
+                else
+                {
+                    $FileContent.ID = "/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)"    
+                }
+                
             }
             if($FileContent.type -eq "Microsoft.Blueprint/blueprints/artifacts") 
             {
@@ -783,8 +871,16 @@ If($Mode -eq "Import")
                 {
                     $BlueprintName = $NewBluePrintName
                 }
-                #Ensure we update the Management Group and BlueprintName for the target ID
-                $FileContent.ID = "/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts/$($FileContent.Name)"
+                #Ensure we update the Management Group /subscriptionId and BlueprintName for the target ID
+                if ($BlueprintMode -eq "Subscription" -and !($TenantId))
+                {
+                    $FileContent.ID = "/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts/$($FileContent.Name)"
+                }
+                else
+                {
+                    $FileContent.ID = "/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts/$($FileContent.Name)"    
+                }
+                
             }
             $JSONArray = $JSONArray + $FileContent
         }
@@ -805,7 +901,7 @@ If($Mode -eq "Import")
             {
                 Write-Host "Importing main Blueprint first " -ForegroundColor White -NoNewline
                 write-host "$($JSON.Name)" -ForegroundColor Yellow
-                $ImportURI = "https://management.azure.com$($JSON.ID)$APIVersion"
+                $ImportURI = "https://management.azure.com$($JSON.ID)$($APIVersion)"
                 $Body = $JSON|ConvertTo-Json -depth 50 -Compress -ErrorAction Stop
 
                 # Put call 
@@ -828,7 +924,7 @@ If($Mode -eq "Import")
             {
                 Write-Host "Importing $($JSON.Kind) artifact " -ForegroundColor White -NoNewline
                 write-host "$($JSON.Name)" -ForegroundColor Yellow
-                $ImportURI = "https://management.azure.com$($JSON.ID)$APIVersion"
+                $ImportURI = "https://management.azure.com$($JSON.ID)$($APIVersion)"
                 $Body = $JSON|ConvertTo-Json -depth 50 -Compress -ErrorAction Stop
 
                 # Put call 
