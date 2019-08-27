@@ -296,7 +296,11 @@ param
     [switch]$Force,
 
     # TenantId to bypass subscription requirement
-    [guid]$TenantId
+    [guid]$TenantId,
+
+    [Parameter()]
+    [ValidateSet('AzureChinaCloud', 'AzureCloud', 'AzureGermanCloud', 'AzureUSGovernment')]
+    [String]$Environment = 'AzureCloud'
 
 )
 
@@ -361,6 +365,15 @@ write-host "module mode"
 write-host "Please note this script is using a preview API for Azure Blueprint and is subject to change." -ForegroundColor Green
 write-host "This script currently only supports Draft Blueprints or most recently published and related artifacts." -ForegroundColor DarkYellow
 write-host "This script currently does not support custom policies - only built-ins are supported." -ForegroundColor DarkYellow
+
+$RmUrl = if ($ModuleMode -eq 'Az')
+{
+    (Get-AzEnvironment -Name $Environment).ResourceManagerUrl
+}
+else
+{
+    (Get-AzureRmEnvironment -Name $Environment).ResourceManagerUrl
+}
 
 # Determine where the script is running - build export dir
 if ($MyInvocation.MyCommand.Path -ne $null)
@@ -551,11 +564,11 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
         # Get all Blueprints
         if ($BlueprintMode -eq "Subscription" -and !($TenantId))
         {
-            $BlueprintsURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
+            $BlueprintsURI = "$($RmUrl)subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
         }
         else 
         {
-            $BlueprintsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
+            $BlueprintsURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
         }
         
         Try
@@ -657,12 +670,12 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
     #Blueprints and Artifacts URIs
     if ($BlueprintMode -eq "Subscription" -and !($TenantId))
     {
-        $BluePrintURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
-        $ArtifactsURI = "https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+        $BluePrintURI = "$($RmUrl)/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "$($RmUrl)/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
     } else
     {
-        $BluePrintURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
-        $ArtifactsURI = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+        $BluePrintURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
     }
     #}
     try
@@ -901,7 +914,7 @@ If($Mode -eq "Import")
             {
                 Write-Host "Importing main Blueprint first " -ForegroundColor White -NoNewline
                 write-host "$($JSON.Name)" -ForegroundColor Yellow
-                $ImportURI = "https://management.azure.com$($JSON.ID)$($APIVersion)"
+                $ImportURI = "$($RmUrl.Trim('/'))$($JSON.ID)$($APIVersion)"
                 $Body = $JSON|ConvertTo-Json -depth 50 -Compress -ErrorAction Stop
 
                 # Put call 
@@ -924,7 +937,7 @@ If($Mode -eq "Import")
             {
                 Write-Host "Importing $($JSON.Kind) artifact " -ForegroundColor White -NoNewline
                 write-host "$($JSON.Name)" -ForegroundColor Yellow
-                $ImportURI = "https://management.azure.com$($JSON.ID)$($APIVersion)"
+                $ImportURI = "$($RmUrl.Trim('/'))$($JSON.ID)$($APIVersion)"
                 $Body = $JSON|ConvertTo-Json -depth 50 -Compress -ErrorAction Stop
 
                 # Put call 
