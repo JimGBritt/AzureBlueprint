@@ -568,7 +568,7 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
         }
         else 
         {
-            $BlueprintsURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
+            $BlueprintsURI = "$($RmUrl)providers/Microsoft.Management/managementGroups/$ManagementGroupID/providers/Microsoft.Blueprint/blueprints$($APIVersion)"    
         }
         
         Try
@@ -670,12 +670,12 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
     #Blueprints and Artifacts URIs
     if ($BlueprintMode -eq "Subscription" -and !($TenantId))
     {
-        $BluePrintURI = "$($RmUrl)/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
-        $ArtifactsURI = "$($RmUrl)/subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+        $BluePrintURI = "$($RmUrl)subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "$($RmUrl)subscriptions/$($SubscriptionID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
     } else
     {
-        $BluePrintURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
-        $ArtifactsURI = "$($RmUrl)/providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
+        $BluePrintURI = "$($RmUrl)providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)$($APIVersion)"
+        $ArtifactsURI = "$($RmUrl)providers/Microsoft.Management/managementGroups/$($ManagementGroupID)/providers/Microsoft.Blueprint/blueprints/$($BluePrintName)/artifacts$($APIVersion)"
     }
     #}
     try
