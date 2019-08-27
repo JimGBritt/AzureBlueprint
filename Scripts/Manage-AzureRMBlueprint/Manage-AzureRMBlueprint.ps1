@@ -426,12 +426,12 @@ catch
 {
     If($ModuleMode -eq "AzureRM")
     {
-        $null = Login-AzureRmAccount
+        $null = Login-AzureRmAccount -Environment $Environment
         $AzureLogin = Get-AzureRmSubscription
     }
     If($ModuleMode -eq "Az")
     {
-        $null = Login-AzAccount
+        $null = Login-AzAccount -Environment $Environment
         $AzureLogin = Get-AzSubscription
     }
 }
