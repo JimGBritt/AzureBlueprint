@@ -819,7 +819,7 @@ If($Mode -eq "Import")
         write-host "$ImportDir" -ForegroundColor Yellow 
         
         # Getting BlueprintName from base folder
-        $BlueprintName = $filesToImport[0].directory.Name
+        $BlueprintName = $BlueprintName = Split-Path $ImportDir -Leaf
 
         # Get each file
         foreach ($file in $filesToImport)
