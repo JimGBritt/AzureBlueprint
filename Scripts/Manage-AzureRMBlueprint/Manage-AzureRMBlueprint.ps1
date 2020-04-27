@@ -759,7 +759,7 @@ If($Mode -eq "Export" -or $Mode -eq "Report")
 
                 Write-Host "Exporting Artifact($Kind): " -NoNewline -ForegroundColor Cyan
                 write-host "$Name.json" -ForegroundColor Yellow
-                $Artifact|ConvertTo-Json -Depth 50|Out-File "$ExportDir\$TargetBPName\$Name.json"
+                $Artifact|ConvertTo-Json -Depth 50 |  ForEach-Object { [System.Text.RegularExpressions.Regex]::Unescape($_) } | Out-File "$ExportDir\$TargetBPName\$Name.json"
             }
         }
         # Report logic for exporting a basic report of a Blueprint and Artifacts        
